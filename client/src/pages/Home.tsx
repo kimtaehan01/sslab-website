@@ -2,11 +2,13 @@
  * Home Page — Geometric Precision Design
  * Neo-Swiss Modernism: asymmetric layouts, bold typography, geometric accents
  * Signal Red (#e63946) accent, Deep Navy (#1a1a2e) text, Steel Blue (#457b9d) secondary
+ * Now connected to DB for research areas and news
  */
-import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useInView, animate } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowRight, BookOpen, Users, FlaskConical, Mail, Terminal, Shield, Cpu, Code2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowRight, BookOpen, Users, FlaskConical, Mail, Terminal, Shield, Cpu, Code2, Database, Globe, Layers, Zap } from "lucide-react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -22,35 +24,17 @@ const RESEARCH_SYSTEMS = "https://d2xsxph8kpxj0f.cloudfront.net/3105196632524722
 const LAB_ENV = "https://d2xsxph8kpxj0f.cloudfront.net/310519663252472281/cQ26xxngtens5aiY5g678s/lab-environment-YpHRZqvbu4ndqUYYe8yf8i.webp";
 const ABOUT_PATTERN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663252472281/cQ26xxngtens5aiY5g678s/about-pattern_12abb75e.png";
 
-const researchAreas = [
-  {
-    title: "운영체제",
-    titleEn: "Operating Systems",
-    desc: "리눅스 커널 최적화, 실시간 스케줄링, 가상화 기술 등 운영체제 핵심 영역을 연구합니다.",
-    icon: Terminal,
-    num: "01",
-  },
-  {
-    title: "컴파일러",
-    titleEn: "Compiler Design",
-    desc: "프로그램 분석, 코드 최적화, 정적 분석 기법 등 컴파일러 기술을 탐구합니다.",
-    icon: Code2,
-    num: "02",
-  },
-  {
-    title: "시스템 보안",
-    titleEn: "System Security",
-    desc: "메모리 안전성, 취약점 분석, 보안 강화 기법 등 시스템 수준의 보안을 연구합니다.",
-    icon: Shield,
-    num: "03",
-  },
-  {
-    title: "임베디드 시스템",
-    titleEn: "Embedded Systems",
-    desc: "IoT 디바이스, 실시간 시스템, 저전력 컴퓨팅 등 임베디드 환경을 연구합니다.",
-    icon: Cpu,
-    num: "04",
-  },
+// Icon mapping for DB data
+const iconMap: Record<string, React.ComponentType<any>> = {
+  Terminal, Code2, Shield, Cpu, Database, Globe, Layers, Zap,
+};
+
+// Default research areas (used when DB is empty)
+const defaultResearchAreas = [
+  { title: "운영체제", titleEn: "Operating Systems", description: "리눅스 커널 최적화, 실시간 스케줄링, 가상화 기술 등 운영체제 핵심 영역을 연구합니다.", icon: "Terminal" },
+  { title: "컴파일러", titleEn: "Compiler Design", description: "프로그램 분석, 코드 최적화, 정적 분석 기법 등 컴파일러 기술을 탐구합니다.", icon: "Code2" },
+  { title: "시스템 보안", titleEn: "System Security", description: "메모리 안전성, 취약점 분석, 보안 강화 기법 등 시스템 수준의 보안을 연구합니다.", icon: "Shield" },
+  { title: "임베디드 시스템", titleEn: "Embedded Systems", description: "IoT 디바이스, 실시간 시스템, 저전력 컴퓨팅 등 임베디드 환경을 연구합니다.", icon: "Cpu" },
 ];
 
 function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
@@ -75,30 +59,48 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   );
 }
 
-const stats = [
-  { value: 10, suffix: "+", label: "연구 논문", sublabel: "Published Papers" },
-  { value: 15, suffix: "+", label: "연구실 구성원", sublabel: "Lab Members" },
-  { value: 5, suffix: "+", label: "진행 프로젝트", sublabel: "Active Projects" },
-  { value: 3, suffix: "+", label: "산학 협력", sublabel: "Industry Partners" },
-];
-
 export default function Home() {
+  // Fetch data from DB
+  const researchQuery = trpc.researchAreas.list.useQuery();
+  const membersQuery = trpc.members.list.useQuery();
+  const publicationsQuery = trpc.publications.list.useQuery();
+  const newsQuery = trpc.news.list.useQuery();
+
+  // Use DB data or fallback to defaults
+  const researchAreas = useMemo(() => {
+    if (researchQuery.data && researchQuery.data.length > 0) {
+      return researchQuery.data.slice(0, 4).map((area, i) => ({
+        title: area.title,
+        titleEn: area.titleEn,
+        desc: area.description,
+        icon: area.icon,
+        num: String(i + 1).padStart(2, "0"),
+      }));
+    }
+    return defaultResearchAreas.map((area, i) => ({
+      ...area,
+      desc: area.description,
+      num: String(i + 1).padStart(2, "0"),
+    }));
+  }, [researchQuery.data]);
+
+  const stats = useMemo(() => [
+    { value: publicationsQuery.data?.length || 10, suffix: "+", label: "연구 논문", sublabel: "Published Papers" },
+    { value: membersQuery.data?.length || 15, suffix: "+", label: "연구실 구성원", sublabel: "Lab Members" },
+    { value: researchQuery.data?.length || 5, suffix: "+", label: "연구 분야", sublabel: "Research Areas" },
+    { value: 3, suffix: "+", label: "산학 협력", sublabel: "Industry Partners" },
+  ], [publicationsQuery.data, membersQuery.data, researchQuery.data]);
+
   return (
     <div>
       {/* ===== HERO SECTION ===== */}
       <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-navy">
-        {/* Background image with overlay */}
         <div className="absolute inset-0">
-          <img
-            src={HERO_BG}
-            alt=""
-            className="w-full h-full object-cover opacity-35"
-          />
+          <img src={HERO_BG} alt="" className="w-full h-full object-cover opacity-35" />
           <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/30" />
         </div>
 
-        {/* Geometric decorations */}
         <div className="absolute top-20 right-[10%] w-72 h-72 border border-white/[0.04] rotate-45" />
         <div className="absolute top-40 right-[15%] w-48 h-48 border border-white/[0.03] rotate-45" />
         <div className="absolute bottom-32 right-[20%] w-32 h-32 border border-signal-red/15 rotate-12" />
@@ -107,38 +109,19 @@ export default function Home() {
 
         <div className="container relative z-10">
           <div className="max-w-3xl">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={fadeUp}
-              custom={0}
-              className="flex items-center gap-3 mb-8"
-            >
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0} className="flex items-center gap-3 mb-8">
               <div className="w-14 h-[2px] bg-signal-red" />
-              <span className="font-mono text-signal-red text-sm tracking-[0.2em] uppercase">
-                Hannam University
-              </span>
+              <span className="font-mono text-signal-red text-sm tracking-[0.2em] uppercase">Hannam University</span>
             </motion.div>
 
-            <motion.h1
-              initial="hidden"
-              animate="visible"
-              variants={fadeUp}
-              custom={1}
+            <motion.h1 initial="hidden" animate="visible" variants={fadeUp} custom={1}
               className="font-heading font-bold text-white text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] leading-[1.05] tracking-tight mb-8"
             >
-              System
-              <br />
-              Software
-              <br />
+              System<br />Software<br />
               <span className="text-signal-red italic">Laboratory</span>
             </motion.h1>
 
-            <motion.p
-              initial="hidden"
-              animate="visible"
-              variants={fadeUp}
-              custom={2}
+            <motion.p initial="hidden" animate="visible" variants={fadeUp} custom={2}
               className="text-white/55 text-base sm:text-lg lg:text-xl max-w-xl leading-relaxed mb-10"
             >
               한남대학교 컴퓨터공학과 시스템 소프트웨어 연구실에서는
@@ -146,22 +129,14 @@ export default function Home() {
               최첨단 연구를 수행하고 있습니다.
             </motion.p>
 
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={fadeUp}
-              custom={3}
-              className="flex flex-wrap gap-4"
-            >
-              <Link
-                href="/research"
+            <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
+              <Link href="/research"
                 className="group inline-flex items-center gap-2 px-7 py-3.5 bg-signal-red text-white font-heading font-medium text-sm tracking-wide hover:bg-signal-red/90 transition-all duration-300"
               >
                 연구 분야 보기
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link
-                href="/contact"
+              <Link href="/contact"
                 className="inline-flex items-center gap-2 px-7 py-3.5 border border-white/20 text-white/80 font-heading font-medium text-sm tracking-wide hover:bg-white/5 hover:border-white/30 transition-all duration-300"
               >
                 연락하기
@@ -170,7 +145,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom geometric bar */}
         <div className="absolute bottom-0 left-0 right-0 h-1 flex">
           <div className="w-1/4 bg-signal-red" />
           <div className="w-1/4 bg-steel-blue" />
@@ -186,11 +160,9 @@ export default function Home() {
             {stats.map((stat, i) => (
               <motion.div
                 key={stat.label}
-                initial="hidden"
-                whileInView="visible"
+                initial="hidden" whileInView="visible"
                 viewport={{ once: true, margin: "-50px" }}
-                variants={fadeUp}
-                custom={i}
+                variants={fadeUp} custom={i}
                 className="relative"
               >
                 <div className="flex items-baseline gap-1">
@@ -200,7 +172,6 @@ export default function Home() {
                 </div>
                 <p className="text-foreground font-medium text-sm mt-2">{stat.label}</p>
                 <p className="text-muted-foreground text-xs font-mono tracking-wide">{stat.sublabel}</p>
-                {/* Divider line on right for non-last items */}
                 {i < stats.length - 1 && (
                   <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-[1px] h-12 bg-border" />
                 )}
@@ -212,29 +183,20 @@ export default function Home() {
 
       {/* ===== ABOUT SECTION ===== */}
       <section className="py-24 lg:py-32 relative overflow-hidden">
-        {/* Background pattern */}
         <div className="absolute inset-0 opacity-[0.15]">
           <img src={ABOUT_PATTERN} alt="" className="w-full h-full object-cover" />
         </div>
 
         <div className="container relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
-            {/* Text */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="lg:col-span-7"
-            >
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="lg:col-span-7">
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-3 mb-5">
                 <div className="accent-line" />
                 <span className="font-mono text-signal-red text-xs tracking-[0.2em] uppercase">About SSLAB</span>
               </motion.div>
 
               <motion.h2 variants={fadeUp} custom={1} className="font-heading font-bold text-3xl lg:text-5xl text-navy leading-[1.15] mb-7">
-                시스템의 본질을
-                <br />
-                탐구합니다
+                시스템의 본질을<br />탐구합니다
               </motion.h2>
 
               <motion.div variants={fadeUp} custom={2} className="space-y-5 mb-8">
@@ -250,8 +212,7 @@ export default function Home() {
               </motion.div>
 
               <motion.div variants={fadeUp} custom={3}>
-                <Link
-                  href="/members"
+                <Link href="/members"
                   className="group inline-flex items-center gap-2 text-signal-red font-heading font-medium text-sm hover:gap-3 transition-all duration-300"
                 >
                   구성원 보기 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -259,7 +220,6 @@ export default function Home() {
               </motion.div>
             </motion.div>
 
-            {/* Image */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -269,13 +229,8 @@ export default function Home() {
             >
               <div className="relative">
                 <div className="absolute -top-4 -left-4 w-full h-full border-2 border-signal-red/20" />
-                <img
-                  src={LAB_ENV}
-                  alt="SSLAB 연구 환경"
-                  className="w-full aspect-[4/3] object-cover relative z-10"
-                />
+                <img src={LAB_ENV} alt="SSLAB 연구 환경" className="w-full aspect-[4/3] object-cover relative z-10" />
                 <div className="absolute -bottom-4 -right-4 w-28 h-28 bg-signal-red/10 z-0" />
-                {/* Corner accent */}
                 <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-signal-red z-20 translate-x-2 -translate-y-2" />
               </div>
             </motion.div>
@@ -285,18 +240,12 @@ export default function Home() {
 
       {/* ===== RESEARCH AREAS ===== */}
       <section className="py-24 lg:py-32 bg-navy relative overflow-hidden">
-        {/* Geometric decorations */}
         <div className="absolute top-10 left-10 w-56 h-56 border border-white/[0.04] rotate-45" />
         <div className="absolute bottom-10 right-10 w-40 h-40 border border-white/[0.04] -rotate-12" />
         <div className="absolute top-1/2 right-[5%] w-[1px] h-48 bg-signal-red/10" />
 
         <div className="container relative">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="mb-14 lg:mb-20"
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="mb-14 lg:mb-20">
             <motion.div variants={fadeUp} custom={0} className="flex items-center gap-3 mb-5">
               <div className="accent-line" />
               <span className="font-mono text-signal-red text-xs tracking-[0.2em] uppercase">Research Areas</span>
@@ -307,51 +256,37 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {researchAreas.map((area, i) => (
-              <motion.div
-                key={area.title}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-50px" }}
-                variants={fadeUp}
-                custom={i}
-                className="group relative bg-white/[0.03] border border-white/[0.08] p-8 lg:p-10 hover:bg-white/[0.06] hover:border-white/[0.15] transition-all duration-500"
-              >
-                {/* Corner accents on hover */}
-                <div className="absolute top-0 left-0 w-0 h-[2px] bg-signal-red group-hover:w-12 transition-all duration-500" />
-                <div className="absolute top-0 left-0 w-[2px] h-0 bg-signal-red group-hover:h-12 transition-all duration-500" />
+            {researchAreas.map((area, i) => {
+              const IconComponent = iconMap[area.icon] || Terminal;
+              return (
+                <motion.div
+                  key={area.title}
+                  initial="hidden" whileInView="visible"
+                  viewport={{ once: true, margin: "-50px" }}
+                  variants={fadeUp} custom={i}
+                  className="group relative bg-white/[0.03] border border-white/[0.08] p-8 lg:p-10 hover:bg-white/[0.06] hover:border-white/[0.15] transition-all duration-500"
+                >
+                  <div className="absolute top-0 left-0 w-0 h-[2px] bg-signal-red group-hover:w-12 transition-all duration-500" />
+                  <div className="absolute top-0 left-0 w-[2px] h-0 bg-signal-red group-hover:h-12 transition-all duration-500" />
 
-                <span className="font-heading font-bold text-6xl text-white/[0.04] absolute top-4 right-6 group-hover:text-signal-red/15 transition-colors duration-500">
-                  {area.num}
-                </span>
-                
-                <div className="w-10 h-10 bg-signal-red/10 flex items-center justify-center mb-5 group-hover:bg-signal-red/20 transition-colors duration-300">
-                  <area.icon size={20} className="text-signal-red" />
-                </div>
+                  <span className="font-heading font-bold text-6xl text-white/[0.04] absolute top-4 right-6 group-hover:text-signal-red/15 transition-colors duration-500">
+                    {area.num}
+                  </span>
 
-                <h3 className="font-heading font-bold text-xl text-white mb-1 relative z-10">
-                  {area.title}
-                </h3>
-                <p className="font-mono text-signal-red/70 text-xs mb-4 tracking-wide">
-                  {area.titleEn}
-                </p>
-                <p className="text-white/50 text-sm leading-relaxed relative z-10">
-                  {area.desc}
-                </p>
-              </motion.div>
-            ))}
+                  <div className="w-10 h-10 bg-signal-red/10 flex items-center justify-center mb-5 group-hover:bg-signal-red/20 transition-colors duration-300">
+                    <IconComponent size={20} className="text-signal-red" />
+                  </div>
+
+                  <h3 className="font-heading font-bold text-xl text-white mb-1 relative z-10">{area.title}</h3>
+                  <p className="font-mono text-signal-red/70 text-xs mb-4 tracking-wide">{area.titleEn}</p>
+                  <p className="text-white/50 text-sm leading-relaxed relative z-10">{area.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeUp}
-            custom={0}
-            className="mt-12 text-center"
-          >
-            <Link
-              href="/research"
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} custom={0} className="mt-12 text-center">
+            <Link href="/research"
               className="group inline-flex items-center gap-2 px-7 py-3.5 border border-white/20 text-white/80 font-heading font-medium text-sm tracking-wide hover:bg-white/5 hover:border-white/30 transition-all duration-300"
             >
               연구 분야 자세히 보기 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -372,31 +307,19 @@ export default function Home() {
               className="lg:col-span-6"
             >
               <div className="relative">
-                <img
-                  src={RESEARCH_SYSTEMS}
-                  alt="시스템 소프트웨어 아키텍처"
-                  className="w-full aspect-video object-cover"
-                />
-                {/* Decorative corner */}
+                <img src={RESEARCH_SYSTEMS} alt="시스템 소프트웨어 아키텍처" className="w-full aspect-video object-cover" />
                 <div className="absolute -bottom-3 -right-3 w-full h-full border border-steel-blue/20 -z-10" />
               </div>
             </motion.div>
 
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-              className="lg:col-span-6 lg:pl-4"
-            >
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} className="lg:col-span-6 lg:pl-4">
               <motion.div variants={fadeUp} custom={0} className="flex items-center gap-3 mb-5">
                 <div className="accent-line" />
                 <span className="font-mono text-signal-red text-xs tracking-[0.2em] uppercase">Our Approach</span>
               </motion.div>
 
               <motion.h2 variants={fadeUp} custom={1} className="font-heading font-bold text-3xl lg:text-4xl text-navy leading-tight mb-7">
-                이론과 실제의
-                <br />
-                균형 잡힌 연구
+                이론과 실제의<br />균형 잡힌 연구
               </motion.h2>
 
               <motion.p variants={fadeUp} custom={2} className="text-foreground/70 text-base leading-relaxed mb-8">
@@ -435,17 +358,12 @@ export default function Home() {
             backgroundSize: '48px 48px',
           }} />
         </div>
-        
-        {/* Geometric accent */}
+
         <div className="absolute top-1/2 left-[5%] -translate-y-1/2 w-32 h-32 border border-signal-red/10 rotate-45" />
         <div className="absolute top-1/2 right-[5%] -translate-y-1/2 w-24 h-24 border border-steel-blue/10 -rotate-12" />
 
         <div className="container relative text-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <motion.h2 variants={fadeUp} custom={0} className="font-heading font-bold text-3xl lg:text-5xl text-white mb-5">
               함께 연구할 동료를 찾습니다
             </motion.h2>
@@ -453,16 +371,14 @@ export default function Home() {
               시스템 소프트웨어에 관심이 있는 학부생, 대학원생의 참여를 환영합니다.
             </motion.p>
             <motion.div variants={fadeUp} custom={2} className="flex flex-wrap justify-center gap-4">
-              <Link
-                href="/contact"
+              <Link href="/contact"
                 className="group inline-flex items-center gap-2 px-8 py-3.5 bg-signal-red text-white font-heading font-medium text-sm tracking-wide hover:bg-signal-red/90 transition-all duration-300"
               >
                 <Mail size={16} />
                 연락하기
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link
-                href="/members"
+              <Link href="/members"
                 className="inline-flex items-center gap-2 px-8 py-3.5 border border-white/20 text-white/80 font-heading font-medium text-sm tracking-wide hover:bg-white/5 hover:border-white/30 transition-all duration-300"
               >
                 구성원 보기

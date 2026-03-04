@@ -1,0 +1,21 @@
+# Project TODO
+
+- [x] Basic homepage layout
+- [x] Navigation menu with scroll-aware header
+- [x] Research page with detailed research areas
+- [x] Members page with professor, graduate, undergraduate sections
+- [x] Publications page with filtering
+- [x] Contact page with Google Maps
+- [x] 404 Not Found page
+- [x] Responsive design and animations
+- [x] Full-stack upgrade (backend + DB + auth)
+- [x] Database schema for members, publications, research areas, news
+- [x] API endpoints (tRPC routers) for CRUD operations
+- [x] Admin dashboard layout with sidebar navigation
+- [x] Admin: Members management (add/edit/delete professor, grad students, undergrad, alumni)
+- [x] Admin: Publications management (add/edit/delete papers)
+- [x] Admin: Research areas management (add/edit/delete)
+- [x] Admin: News/announcements management
+- [x] Frontend pages connected to database data
+- [x] Admin route protection (only admin users can access)
+- [x] Vitest tests for API endpoints

@@ -1,10 +1,12 @@
 /**
  * Publications Page — Geometric Precision Design
  * Academic papers and publications with year-based grouping and filtering
+ * Connected to DB
  */
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FileText, ExternalLink, Filter } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -15,116 +17,64 @@ const fadeUp = {
   }),
 };
 
-type PubCategory = "all" | "journal" | "conference" | "domestic";
-
-interface Publication {
-  title: string;
-  authors: string;
-  venue: string;
-  year: number;
-  category: Exclude<PubCategory, "all">;
-  link?: string;
-}
-
-const publications: Publication[] = [
-  {
-    title: "Efficient Memory Management for Real-Time Container Orchestration",
-    authors: "SSLAB Members",
-    venue: "IEEE Transactions on Computers",
-    year: 2025,
-    category: "journal",
-  },
-  {
-    title: "A Static Analysis Framework for Detecting Kernel Vulnerabilities",
-    authors: "SSLAB Members",
-    venue: "ACM SIGOPS Operating Systems Review",
-    year: 2025,
-    category: "journal",
-  },
-  {
-    title: "Optimizing JIT Compilation for Edge Computing Platforms",
-    authors: "SSLAB Members",
-    venue: "International Conference on Compilers, Architecture, and Synthesis for Embedded Systems (CASES)",
-    year: 2024,
-    category: "conference",
-  },
-  {
-    title: "Lightweight Virtualization for IoT: A Performance Study",
-    authors: "SSLAB Members",
-    venue: "USENIX Annual Technical Conference (ATC)",
-    year: 2024,
-    category: "conference",
-  },
-  {
-    title: "Fuzzing-based Security Testing for Embedded RTOS",
-    authors: "SSLAB Members",
-    venue: "IEEE Symposium on Security and Privacy (S&P)",
-    year: 2024,
-    category: "conference",
-  },
-  {
-    title: "리눅스 커널 스케줄러 성능 분석 및 최적화 기법 연구",
-    authors: "SSLAB Members",
-    venue: "한국정보과학회 학술발표논문집",
-    year: 2024,
-    category: "domestic",
-  },
-  {
-    title: "컨테이너 기반 엣지 컴퓨팅 환경에서의 자원 관리 기법",
-    authors: "SSLAB Members",
-    venue: "한국정보처리학회 추계학술발표대회",
-    year: 2023,
-    category: "domestic",
-  },
-  {
-    title: "Hardware-Assisted Memory Safety for System Software",
-    authors: "SSLAB Members",
-    venue: "ACM Conference on Computer and Communications Security (CCS)",
-    year: 2023,
-    category: "conference",
-  },
-  {
-    title: "정적 분석 기반 커널 취약점 탐지 프레임워크",
-    authors: "SSLAB Members",
-    venue: "한국소프트웨어공학회 학술대회",
-    year: 2023,
-    category: "domestic",
-  },
-];
+type PubCategory = "all" | "journal" | "conference" | "workshop" | "thesis" | "other";
 
 const categories: { value: PubCategory; label: string }[] = [
   { value: "all", label: "전체" },
   { value: "journal", label: "저널" },
-  { value: "conference", label: "국제 학회" },
-  { value: "domestic", label: "국내 학회" },
+  { value: "conference", label: "학회" },
+  { value: "workshop", label: "워크숍" },
+  { value: "thesis", label: "학위논문" },
 ];
 
-const categoryColors: Record<Exclude<PubCategory, "all">, string> = {
+const categoryColors: Record<string, string> = {
   journal: "bg-signal-red/10 text-signal-red",
   conference: "bg-steel-blue/10 text-steel-blue",
-  domestic: "bg-navy/10 text-navy",
+  workshop: "bg-purple-100 text-purple-700",
+  thesis: "bg-green-100 text-green-700",
+  other: "bg-navy/10 text-navy",
 };
 
-const categoryLabels: Record<Exclude<PubCategory, "all">, string> = {
+const categoryLabels: Record<string, string> = {
   journal: "Journal",
   conference: "Conference",
-  domestic: "Domestic",
+  workshop: "Workshop",
+  thesis: "Thesis",
+  other: "Other",
 };
+
+// Default publications (used when DB is empty)
+const defaultPublications = [
+  { title: "Efficient Memory Management for Real-Time Container Orchestration", authors: "SSLAB Members", venue: "IEEE Transactions on Computers", year: 2025, category: "journal" as const, link: null },
+  { title: "A Static Analysis Framework for Detecting Kernel Vulnerabilities", authors: "SSLAB Members", venue: "ACM SIGOPS Operating Systems Review", year: 2025, category: "journal" as const, link: null },
+  { title: "Optimizing JIT Compilation for Edge Computing Platforms", authors: "SSLAB Members", venue: "CASES 2024", year: 2024, category: "conference" as const, link: null },
+  { title: "Lightweight Virtualization for IoT: A Performance Study", authors: "SSLAB Members", venue: "USENIX ATC 2024", year: 2024, category: "conference" as const, link: null },
+  { title: "Fuzzing-based Security Testing for Embedded RTOS", authors: "SSLAB Members", venue: "IEEE S&P 2024", year: 2024, category: "conference" as const, link: null },
+  { title: "리눅스 커널 스케줄러 성능 분석 및 최적화 기법 연구", authors: "SSLAB Members", venue: "한국정보과학회 학술발표논문집", year: 2024, category: "conference" as const, link: null },
+  { title: "컨테이너 기반 엣지 컴퓨팅 환경에서의 자원 관리 기법", authors: "SSLAB Members", venue: "한국정보처리학회 추계학술발표대회", year: 2023, category: "conference" as const, link: null },
+  { title: "Hardware-Assisted Memory Safety for System Software", authors: "SSLAB Members", venue: "ACM CCS 2023", year: 2023, category: "conference" as const, link: null },
+];
 
 export default function Publications() {
   const [filter, setFilter] = useState<PubCategory>("all");
+  const pubsQuery = trpc.publications.list.useQuery();
+
+  const publications = useMemo(() => {
+    if (pubsQuery.data && pubsQuery.data.length > 0) {
+      return pubsQuery.data;
+    }
+    return defaultPublications;
+  }, [pubsQuery.data]);
 
   const filtered = filter === "all" ? publications : publications.filter((p) => p.category === filter);
 
-  const grouped = filtered.reduce<Record<number, Publication[]>>((acc, pub) => {
+  const grouped = filtered.reduce<Record<number, typeof filtered>>((acc, pub) => {
     if (!acc[pub.year]) acc[pub.year] = [];
     acc[pub.year].push(pub);
     return acc;
   }, {});
 
-  const years = Object.keys(grouped)
-    .map(Number)
-    .sort((a, b) => b - a);
+  const years = Object.keys(grouped).map(Number).sort((a, b) => b - a);
 
   return (
     <div>
@@ -161,11 +111,8 @@ export default function Publications() {
         <div className="container">
           {/* Filter Tabs */}
           <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeUp}
-            custom={0}
+            initial="hidden" whileInView="visible" viewport={{ once: true }}
+            variants={fadeUp} custom={0}
             className="flex items-center gap-2 mb-14 flex-wrap"
           >
             <Filter size={16} className="text-muted-foreground mr-2" />
@@ -199,14 +146,11 @@ export default function Publications() {
                 {grouped[year].map((pub, i) => (
                   <motion.div
                     key={pub.title}
-                    initial="hidden"
-                    whileInView="visible"
+                    initial="hidden" whileInView="visible"
                     viewport={{ once: true, margin: "-30px" }}
-                    variants={fadeUp}
-                    custom={i}
+                    variants={fadeUp} custom={i}
                     className="group relative border border-border bg-white p-6 lg:p-7 hover:border-signal-red/20 transition-all duration-300"
                   >
-                    {/* Corner accent */}
                     <div className="absolute top-0 left-0 w-0 h-[2px] bg-signal-red group-hover:w-8 transition-all duration-500" />
 
                     <div className="flex items-start gap-4">
@@ -218,8 +162,8 @@ export default function Publications() {
                           <h3 className="font-heading font-semibold text-navy text-sm lg:text-base leading-snug">
                             {pub.title}
                           </h3>
-                          <span className={`shrink-0 px-2.5 py-1 text-[10px] font-mono tracking-wider uppercase ${categoryColors[pub.category]}`}>
-                            {categoryLabels[pub.category]}
+                          <span className={`shrink-0 px-2.5 py-1 text-[10px] font-mono tracking-wider uppercase ${categoryColors[pub.category] || categoryColors.other}`}>
+                            {categoryLabels[pub.category] || pub.category}
                           </span>
                         </div>
                         <p className="text-muted-foreground text-xs mt-2">{pub.authors}</p>
