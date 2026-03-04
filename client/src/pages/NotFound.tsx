@@ -1,49 +1,32 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
-import { useLocation } from "wouter";
+/**
+ * 404 Not Found — Geometric Precision Design
+ */
+import { Link } from "wouter";
+import { ArrowRight } from "lucide-react";
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
-
-  const handleGoHome = () => {
-    setLocation("/");
-  };
-
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
-            </div>
-          </div>
+    <div className="min-h-[80vh] flex items-center justify-center relative overflow-hidden">
+      {/* Background number */}
+      <span className="absolute font-heading font-bold text-[20rem] lg:text-[30rem] text-navy/[0.03] select-none pointer-events-none leading-none">
+        404
+      </span>
 
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
-
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Go Home
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="container relative text-center">
+        <div className="w-14 h-[2px] bg-signal-red mx-auto mb-6" />
+        <h1 className="font-heading font-bold text-6xl lg:text-8xl text-navy mb-4">404</h1>
+        <p className="font-mono text-signal-red text-xs tracking-[0.2em] uppercase mb-4">Page Not Found</p>
+        <p className="text-muted-foreground text-sm max-w-md mx-auto mb-8 leading-relaxed">
+          요청하신 페이지를 찾을 수 없습니다. 주소를 다시 확인하시거나, 아래 버튼을 통해 홈으로 이동해 주세요.
+        </p>
+        <Link
+          href="/"
+          className="group inline-flex items-center gap-2 px-7 py-3 bg-navy text-white font-heading font-medium text-sm tracking-wide hover:bg-navy/90 transition-colors"
+        >
+          홈으로 돌아가기
+          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
     </div>
   );
 }
