@@ -22,38 +22,12 @@ const ABOUT_PATTERN = "https://d2xsxph8kpxj0f.cloudfront.net/310519663252472281/
 interface MemberData {
   id?: number;
   name: string;
+  nameEn?: string | null;
   role: string;
   research?: string | null;
   email?: string | null;
   imageUrl?: string | null;
 }
-
-// Default data (used when DB is empty)
-const defaultProfessor: MemberData = {
-  name: "지도교수",
-  role: "교수 / 연구실 책임자",
-  research: "운영체제, 시스템 보안, 컴파일러 최적화",
-  email: "sslab@hnu.kr",
-};
-
-const defaultGradStudents: MemberData[] = [
-  { name: "대학원생 1", role: "석사과정", research: "리눅스 커널 최적화, 가상화 기술" },
-  { name: "대학원생 2", role: "석사과정", research: "컴파일러 설계, 정적 분석" },
-  { name: "대학원생 3", role: "석사과정", research: "시스템 보안, 퍼징 기법" },
-];
-
-const defaultUndergradStudents: MemberData[] = [
-  { name: "학부연구생 1", role: "학부 4학년", research: "임베디드 시스템, IoT" },
-  { name: "학부연구생 2", role: "학부 4학년", research: "운영체제, 시스템 프로그래밍" },
-  { name: "학부연구생 3", role: "학부 3학년", research: "컴파일러, 프로그래밍 언어" },
-  { name: "학부연구생 4", role: "학부 3학년", research: "시스템 보안, 네트워크 보안" },
-];
-
-const defaultAlumni = [
-  { name: "졸업생 1", year: "2024", current: "대기업 시스템 소프트웨어 엔지니어" },
-  { name: "졸업생 2", year: "2023", current: "보안 전문 기업 연구원" },
-  { name: "졸업생 3", year: "2023", current: "대학원 진학 (석사과정)" },
-];
 
 function MemberCard({ member, index, featured = false }: { member: MemberData; index: number; featured?: boolean }) {
   return (
@@ -84,6 +58,9 @@ function MemberCard({ member, index, featured = false }: { member: MemberData; i
         <div className="flex-1 min-w-0">
           <h3 className={`font-heading font-bold text-navy ${featured ? "text-xl" : "text-base"}`}>
             {member.name}
+            {member.nameEn && (
+              <span className="text-muted-foreground font-normal text-sm ml-2">{member.nameEn}</span>
+            )}
           </h3>
           <p className="font-mono text-signal-red text-xs tracking-wide mt-1">{member.role}</p>
           {member.research && (
@@ -106,24 +83,20 @@ function MemberCard({ member, index, featured = false }: { member: MemberData; i
 export default function Members() {
   const membersQuery = trpc.members.list.useQuery();
 
-  const { professors, gradStudents, undergradStudents, alumni } = useMemo(() => {
-    if (!membersQuery.data || membersQuery.data.length === 0) {
-      return {
-        professors: [defaultProfessor],
-        gradStudents: defaultGradStudents,
-        undergradStudents: defaultUndergradStudents,
-        alumni: defaultAlumni.map(a => ({ ...a, category: "alumni" as const })),
-      };
-    }
+  const { professors, gradStudents, undergradStudents, alumni, hasData, isLoading } = useMemo(() => {
+    const isLoading = membersQuery.isLoading;
+    const data = membersQuery.data || [];
+    const hasData = data.length > 0;
 
-    const data = membersQuery.data;
     return {
       professors: data.filter(m => m.category === "professor"),
       gradStudents: data.filter(m => m.category === "graduate"),
       undergradStudents: data.filter(m => m.category === "undergraduate"),
       alumni: data.filter(m => m.category === "alumni"),
+      hasData,
+      isLoading,
     };
-  }, [membersQuery.data]);
+  }, [membersQuery.data, membersQuery.isLoading]);
 
   return (
     <div>
@@ -156,6 +129,27 @@ export default function Members() {
         </div>
       </section>
 
+      {/* Loading State */}
+      {isLoading && (
+        <section className="py-20">
+          <div className="container text-center">
+            <div className="w-8 h-8 border-2 border-signal-red border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">구성원 정보를 불러오는 중...</p>
+          </div>
+        </section>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !hasData && (
+        <section className="py-20">
+          <div className="container text-center">
+            <User size={48} className="text-muted-foreground/20 mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">아직 등록된 구성원이 없습니다.</p>
+            <p className="text-muted-foreground text-xs mt-1">관리자 페이지에서 구성원 정보를 추가해 주세요.</p>
+          </div>
+        </section>
+      )}
+
       {/* Professor */}
       {professors.length > 0 && (
         <section className="py-20 lg:py-28 relative overflow-hidden">
@@ -175,7 +169,7 @@ export default function Members() {
 
             <div className="max-w-2xl">
               {professors.map((prof, i) => (
-                <MemberCard key={prof.name} member={prof} index={i} featured />
+                <MemberCard key={prof.id || prof.name} member={prof} index={i} featured />
               ))}
             </div>
           </div>
@@ -198,7 +192,7 @@ export default function Members() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {gradStudents.map((member, i) => (
-                <MemberCard key={member.name} member={member} index={i} />
+                <MemberCard key={member.id || member.name} member={member} index={i} />
               ))}
             </div>
           </div>
@@ -221,7 +215,7 @@ export default function Members() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {undergradStudents.map((member, i) => (
-                <MemberCard key={member.name} member={member} index={i} />
+                <MemberCard key={member.id || member.name} member={member} index={i} />
               ))}
             </div>
           </div>
@@ -245,7 +239,7 @@ export default function Members() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {alumni.map((alum: any, i: number) => (
                 <motion.div
-                  key={alum.name}
+                  key={alum.id || alum.name}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, margin: "-50px" }}
@@ -261,10 +255,10 @@ export default function Members() {
                     <div>
                       <h3 className="font-heading font-semibold text-navy text-sm">{alum.name}</h3>
                       <p className="font-mono text-signal-red text-xs mt-1">
-                        {alum.graduationYear || alum.year}년 졸업
+                        {alum.graduationYear}년 졸업
                       </p>
                       <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
-                        {alum.currentPosition || alum.current}
+                        {alum.currentPosition}
                       </p>
                     </div>
                   </div>

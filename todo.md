@@ -19,3 +19,7 @@
 - [x] Frontend pages connected to database data
 - [x] Admin route protection (only admin users can access)
 - [x] Vitest tests for API endpoints
+- [x] Collect professor data from HNU profile page
+- [x] Add research areas to DB based on professor's specialties
+- [x] Add publications to DB based on professor's publication list
+- [x] Contact 페이지 이메일을 교수님 이메일(jhjang@hnu.kr)로 변경

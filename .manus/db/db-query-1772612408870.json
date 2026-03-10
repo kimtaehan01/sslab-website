@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO publications (title, authors, venue, year, category, sortOrder) VALUES\n('SPARC 환경 실시간 운영체제 RTEMS 실습', '장준혁', '예림디자인', 2025, 'other', 22),\n('JAVA로 배우는 자료구조 - 알고리즘 공부를 위한 실전적 자료구조', '장준혁', '홍릉', 2024, 'other', 23),\n('PYTHON으로 배우는 자료구조', '장준혁', '홍릉', 2024, 'other', 24);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2tMM4dYgrAReC3r.root --database cQ26xxngtens5aiY5g678s --execute \nINSERT INTO publications (title, authors, venue, year, category, sortOrder) VALUES\n('SPARC 환경 실시간 운영체제 RTEMS 실습', '장준혁', '예림디자인', 2025, 'other', 22),\n('JAVA로 배우는 자료구조 - 알고리즘 공부를 위한 실전적 자료구조', '장준혁', '홍릉', 2024, 'other', 23),\n('PYTHON으로 배우는 자료구조', '장준혁', '홍릉', 2024, 'other', 24);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1584
+}

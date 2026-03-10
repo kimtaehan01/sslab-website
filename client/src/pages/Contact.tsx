@@ -20,8 +20,8 @@ const contactInfo = [
   {
     icon: Mail,
     label: "이메일",
-    value: "sslab@hnu.kr",
-    href: "mailto:sslab@hnu.kr",
+    value: "jhjang@hnu.kr",
+    href: "mailto:jhjang@hnu.kr",
   },
   {
     icon: MapPin,
@@ -216,7 +216,7 @@ export default function Contact() {
               {
                 step: "02",
                 title: "이메일 문의",
-                desc: "간단한 자기소개와 관심 연구 분야를 포함하여 sslab@hnu.kr로 이메일을 보내주세요.",
+                desc: "간단한 자기소개와 관심 연구 분야를 포함하여 jhjang@hnu.kr로 이메일을 보내주세요.",
               },
               {
                 step: "03",
@@ -256,7 +256,7 @@ export default function Contact() {
             className="mt-12 text-center"
           >
             <a
-              href="mailto:sslab@hnu.kr"
+              href="mailto:jhjang@hnu.kr"
               className="group inline-flex items-center gap-2 px-8 py-3.5 bg-signal-red text-white font-heading font-medium text-sm tracking-wide hover:bg-signal-red/90 transition-all duration-300"
             >
               <Mail size={16} />

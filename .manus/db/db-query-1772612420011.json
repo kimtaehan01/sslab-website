@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO members (name, nameEn, category, role, research, email, sortOrder) VALUES\n('장준혁', 'Junhyuk Jang', 'professor', '조교수 / 지도교수', '실시간 운영체제, 클라우드/엣지 컴퓨팅, 시스템 보안, 임베디드/IoT 시스템', 'jhjang@hnu.kr', 1);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2tMM4dYgrAReC3r.root --database cQ26xxngtens5aiY5g678s --execute \nINSERT INTO members (name, nameEn, category, role, research, email, sortOrder) VALUES\n('장준혁', 'Junhyuk Jang', 'professor', '조교수 / 지도교수', '실시간 운영체제, 클라우드/엣지 컴퓨팅, 시스템 보안, 임베디드/IoT 시스템', 'jhjang@hnu.kr', 1);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1562
+}
