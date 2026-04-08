@@ -20,8 +20,8 @@ const contactInfo = [
   {
     icon: Mail,
     label: "이메일",
-    value: "jhjang@hnu.kr",
-    href: "mailto:jhjang@hnu.kr",
+    value: "sslab@hnu.kr",
+    href: "mailto:sslab@hnu.kr",
   },
   {
     icon: MapPin,
