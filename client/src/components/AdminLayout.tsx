@@ -3,14 +3,16 @@
  * Sidebar navigation with SSLAB branding
  */
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
   Users, BookOpen, FlaskConical, Newspaper, LayoutDashboard,
-  LogOut, ChevronLeft, Menu, ArrowLeft, Loader2
+  LogOut, ChevronLeft, Menu, ArrowLeft, Loader2, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 const adminMenuItems = [
   { icon: LayoutDashboard, label: "대시보드", path: "/admin" },
@@ -19,6 +21,63 @@ const adminMenuItems = [
   { icon: FlaskConical, label: "연구분야 관리", path: "/admin/research" },
   { icon: Newspaper, label: "소식 관리", path: "/admin/news" },
 ];
+
+function LoginForm() {
+  const [password, setPassword] = useState("");
+  const utils = trpc.useUtils();
+  const loginMutation = trpc.auth.login.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) return;
+    loginMutation.mutate({ password });
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center max-w-sm w-full p-8">
+        <div className="w-14 h-14 bg-navy flex items-center justify-center mx-auto mb-6 relative">
+          <span className="font-heading font-bold text-white text-lg">SS</span>
+          <div className="absolute bottom-0 right-0 w-4 h-4 bg-signal-red" />
+        </div>
+        <h1 className="font-heading font-bold text-2xl text-navy mb-2">관리자 로그인</h1>
+        <p className="text-muted-foreground text-sm mb-6">
+          SSLAB 관리자 대시보드
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div className="relative">
+            <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="관리자 비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-9"
+              autoFocus
+            />
+          </div>
+          <Button
+            type="submit"
+            className="w-full bg-signal-red hover:bg-signal-red/90 text-white font-heading"
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? (
+              <Loader2 size={16} className="animate-spin mr-2" />
+            ) : null}
+            로그인
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -39,26 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-md p-8">
-          <div className="w-14 h-14 bg-navy flex items-center justify-center mx-auto mb-6 relative">
-            <span className="font-heading font-bold text-white text-lg">SS</span>
-            <div className="absolute bottom-0 right-0 w-4 h-4 bg-signal-red" />
-          </div>
-          <h1 className="font-heading font-bold text-2xl text-navy mb-3">관리자 로그인</h1>
-          <p className="text-muted-foreground text-sm mb-6">
-            SSLAB 관리자 대시보드에 접근하려면 로그인이 필요합니다.
-          </p>
-          <Button
-            onClick={() => { window.location.href = getLoginUrl(); }}
-            className="bg-signal-red hover:bg-signal-red/90 text-white font-heading"
-          >
-            로그인
-          </Button>
-        </div>
-      </div>
-    );
+    return <LoginForm />;
   }
 
   if (user.role !== "admin") {

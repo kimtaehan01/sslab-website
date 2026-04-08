@@ -1,9 +1,13 @@
-import { COOKIE_NAME } from "@shared/const";
+import { timingSafeEqual } from "crypto";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
+import { ENV } from "./_core/env";
+import { TRPCError } from "@trpc/server";
 
 // ─── Zod schemas ─────────────────────────────────────────
 const memberInput = z.object({
@@ -55,6 +59,42 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    login: publicProcedure
+      .input(z.object({ password: z.string().min(1) }))
+      .mutation(async ({ input, ctx }) => {
+        const adminPassword = ENV.adminPassword;
+        if (!adminPassword) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "관리자 비밀번호가 설정되지 않았습니다.",
+          });
+        }
+
+        const inputBuf = Buffer.from(input.password);
+        const adminBuf = Buffer.from(adminPassword);
+        const match =
+          inputBuf.length === adminBuf.length &&
+          timingSafeEqual(inputBuf, adminBuf);
+
+        if (!match) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "비밀번호가 올바르지 않습니다.",
+          });
+        }
+
+        const sessionToken = await sdk.createSessionToken("admin", {
+          name: "Admin",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { success: true } as const;
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
