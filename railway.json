@@ -4,7 +4,7 @@
     "builder": "nixpacks"
   },
   "deploy": {
-    "startCommand": "node dist/index.js",
+    "startCommand": "pnpm db:migrate && node dist/index.js",
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 3
   }
